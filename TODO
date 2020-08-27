@@ -1,0 +1,17 @@
+Database
+[] Database (Redis)
+[] Database connection
+[] Service endpoints
+
+Filesystem
+[] Cron job?
+[] Filesystem parsing service that parses the filesystem and dynamically maps
+[] Add FS maps to database on a schedule
+[] Git like change management for files
+[] Optimization
+
+Routing/Serving 
+[] Dynamic routing taken from the database
+[] File server
+[] Optimization
+[] UI for admin managing
