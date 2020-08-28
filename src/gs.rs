@@ -5,7 +5,7 @@ mod file_routing;
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
-            .service(web::scope("/objects").route("", web::get().to(file_routing::objects_route)))
+            .service(web::scope("/references").route("", web::get().to(file_routing::references_route)))
             .service(web::scope("").route("/{filepath:.*}", web::get().to(file_routing::route)))
         })
         .bind("127.0.0.1:5000")?

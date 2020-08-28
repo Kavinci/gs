@@ -5,6 +5,7 @@ use std::env;
 
 mod utils;
 mod objects;
+mod references;
 
 pub async fn route(req: HttpRequest) -> Result<NamedFile> {
     let mut path: PathBuf = req.match_info().query("filepath").parse().unwrap();
@@ -27,8 +28,8 @@ fn get_theme_route(path: PathBuf) -> PathBuf {
     root_path
 }
 
-pub async fn objects_route(req: HttpRequest) -> impl Responder {
+pub async fn references_route(req: HttpRequest) -> impl Responder {
     let path: String = req.path().to_string();
-    println!("test: {}", path);
-    objects::get_fs_structure()
+    //println!("test: {}", path);
+    references::get_fs_structure(path)
 }
