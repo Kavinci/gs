@@ -7,6 +7,10 @@ mod utils;
 mod objects;
 mod references;
 
+pub struct WebPath {
+
+}
+
 pub async fn route(req: HttpRequest) -> Result<NamedFile> {
     let mut path: PathBuf = req.match_info().query("filepath").parse().unwrap();
     if !path.exists() {
@@ -33,3 +37,4 @@ pub async fn references_route(req: HttpRequest) -> impl Responder {
     //println!("test: {}", path);
     references::get_fs_structure(path)
 }
+
