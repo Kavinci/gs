@@ -13,7 +13,7 @@ fn main() {
     //    .bind("127.0.0.1:5000")?
     //    .run()
     //    .await
-
-    server::HTTP::bind(configuration::get_port()).run();
+    
+    let config = configuration::Configuration::new();
+    server::HTTP::bind(config.port).run();
 }
-
