@@ -168,31 +168,3 @@ fn parse_request_transient(buffer: &mut [u8]) -> transient_request::TransientReq
     }
     transient
 }
-
-fn parse_request_line(request_line: &mut Vec<u8>, request: &mut request::Request) -> request::Request {
-    let mut count: u8 = 0;
-    let mut component = String::new();
-    for buf in request_line {
-        if *buf == 32u8{
-            if count == 0 {
-                request.setMethod(component);
-            }
-            else if count == 1 {
-                request.setURI(component);
-            }
-            else if count == 2 {
-                request.setProtocol(component);
-            }
-            component = String::new();
-            count = count + 1;
-        }
-        else {
-            component.push(*buf as char);
-        }
-    }
-    *request
-}
-
-fn parse_headers() {}
-
-fn parse_body() {}
