@@ -21,52 +21,52 @@ impl Request {
         }
     }
 
-    fn setProtocol(&mut self, protocol: String) {
+    fn set_protocol(&mut self, protocol: String) {
         self.protocol = protocol;
     }
 
-    fn setMethod(&mut self, method: String){
+    fn set_method(&mut self, method: String){
         self.method = method;
     }
 
-    fn setURI(&mut self, uri: String) {
+    fn set_uri(&mut self, uri: String) {
         let query = Query::new();
-        self.setQuery(query);
+        self.set_query(query);
         self.uri = uri;
     }
 
-    fn addHeader(&mut self, header: String, value: String){
+    fn add_header(&mut self, header: String, value: String){
         self.headers.insert(header, value);
     }
     
-    fn setQuery(&mut self, query: Query){
+    fn set_query(&mut self, query: Query){
         self.query = query;
     }
 
-    pub fn parse_request_line(&mut self, request_line: &mut Vec<u8>) {
+    pub fn parse_request_line(&mut self, request_line: Vec<u8>) {
         let mut count: u8 = 0;
         let mut component = String::new();
         for buf in request_line {
-            if *buf == 32u8{
+            if buf == 32u8{
                 if count == 0 {
-                    self.setMethod(component);
+                    self.set_method(component);
                 }
                 else if count == 1 {
-                    self.setURI(component);
+                    self.set_uri(component);
                 }
                 else if count == 2 {
-                    self.setProtocol(component);
+                    self.set_protocol(component);
                 }
                 component = String::new();
                 count = count + 1;
             }
             else {
-                component.push(*buf as char);
+                component.push(buf as char);
             }
         }
     }
 
-    pub fn parse_headers(&mut self, headers: &mut Vec<u8>) {
+    pub fn parse_headers(&mut self, headers: Vec<u8>) {
         let mut key: String = String::new();
         let mut value: String = String::new();
         let mut count: usize = 0;
@@ -82,7 +82,7 @@ impl Request {
                 key = key.trim().to_string();
                 value = value.trim().to_string();
                 if key != "" && value != "" {
-                    self.addHeader(key.to_lowercase().clone(), value.clone());
+                    self.add_header(key.to_lowercase().clone(), value.clone());
                 }
                 is_key = true;
                 key = String::new();
@@ -99,18 +99,87 @@ impl Request {
         }
     }
 
-    pub fn parse_body(&mut self) {}
+    pub fn parse_body(&mut self, body: Vec<u8>) {}
 }
 
 pub type Headers = HashMap<String, String>;
 pub type Query = HashMap<String, String>;
 
-pub struct Body {
-
-}
+pub struct Body {}
 
 impl Body {
     pub fn new() -> Body {
         Body {}
     }
 }
+
+
+// let mut key: String = String::new();
+    // let mut value: String = String::new();
+    // let mut count: usize = 0;
+    // let mut last: u8 = 0;
+    // let mut now: u8 = 0;
+    // let mut is_key: bool = true;
+    // let mut pairs: usize = 0;
+    // for buf in buffer {
+    //     last = now.clone();
+    //     now = buf.clone();
+    //     print!("{} ", &buf);
+    //     if count == 0 {
+    //         if now == 32u8{
+    //             //println!("0: {}", value);
+    //             request.insert(String::from("method"), value.clone());
+    //             count = count + 1;
+    //             value = String::new();
+    //         } 
+    //         else {
+    //             value.push(now as char);
+    //         }
+    //     }
+    //     else if count == 1 {
+    //         if now == 32u8{
+    //             //println!("1: {}", value);
+    //             request.insert(String::from("identifier"), value.clone());
+    //             count = count + 1;
+    //             value = String::new();
+    //         }
+    //         else {
+    //             value.push(now as char);
+    //         }
+    //     }
+    //     else if count == 2 {
+    //         if now == 13u8 {
+    //             //println!("2: {}", &value);
+    //             request.insert(String::from("protocol"), value.clone());
+    //             count = count + 1;
+    //             value = String::new();
+    //         }
+    //         else {
+    //             value.push(now as char);
+    //         }
+    //     }
+    //     else if count == 3 {
+    //         if is_key && last == 58u8 && now == 32u8 {
+    //             is_key = false;
+    //             value.pop();
+    //         }
+    //         if now == 10u8 && last == 13u8 {
+    //             key = key.trim().to_string();
+    //             value = value.trim().to_string();
+    //             if key != "" && value != "" {
+    //                 request.insert(key.to_lowercase().clone(), value.clone());
+    //             }
+    //             is_key = true;
+    //             key = String::new();
+    //             value = String::new();
+    //         }
+    //         if now != 0u8 && now != 13u8 && now != 10u8 {
+    //             if is_key && now != 58u8 && now != 32u8 {
+    //                 key.push(now as char);
+    //             }
+    //             else {
+    //                 value.push(now as char);
+    //             }
+    //         }
+    //     }
+    // }

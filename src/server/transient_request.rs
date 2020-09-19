@@ -1,5 +1,5 @@
 pub struct TransientRequest {
-    pub requestLine: Vec<u8>,
+    pub request_line: Vec<u8>,
     pub headers: Vec<Vec<u8>>,
     pub body: Vec<u8>
 }
@@ -7,7 +7,7 @@ pub struct TransientRequest {
 impl TransientRequest {
     pub fn new() -> TransientRequest {
         TransientRequest{
-            requestLine: Vec::new(),
+            request_line: Vec::new(),
             headers: Vec::new(),
             body: Vec::new()
         }

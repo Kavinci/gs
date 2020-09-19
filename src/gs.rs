@@ -15,5 +15,6 @@ fn main() {
     //    .await
     
     let config = configuration::Configuration::new();
-    server::HTTP::bind(config.port).run();
+    let pool = server::threading::ThreadPool::new(16);
+    server::HTTP::bind(config.port).run(server::handle_connection, pool);
 }

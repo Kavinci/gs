@@ -1,18 +1,11 @@
-use actix_web::{HttpRequest, HttpResponse, Result, Responder, Error};
 use serde::Serialize;
 use serde_json;
 use futures::future::{ready, Ready};
 use chrono::{DateTime, TimeZone, NaiveDateTime, Utc};
-use std::path::{ Path, PathBuf, Iter};
-
-fn parse_path(path: String) -> PathBuf {
-    PathBuf::from(path)
-}
 
 #[derive(Serialize)]
 pub struct Directory {
     root: String,
-    parents: String,
     access: u8,
     directories: Vec<String>,
     date_created: DateTime<Utc>,
@@ -34,26 +27,15 @@ impl Responder for Directory {
     }
 }
 
-fn new_directory(mut loc: PathBuf) -> Directory {
+fn new_directory() -> Directory {
     let mut dirs = Vec::new();
     let mut fils = Vec::new();
-    let box_path = loc.into_iter();
 
     dirs.push("aPlace".to_owned());
     fils.push(file_factory());
 
-    let root: String;
-    if loc.pop() {
-        root = "/".to_owned();
-    }
-    else {
-        root = "/".to_owned();
-    }
-    
-
     Directory {
-        root: root.clone(),
-        parents: root.clone(),
+        root: "/".to_owned(),
         access: 4,
         directories: dirs,
         date_created: Utc::now(),
@@ -95,7 +77,6 @@ fn file_factory() -> File {
     }
 }
 
-pub fn get_fs_structure(path: String) -> Directory {
-    let root = parse_path(path);
-    new_directory(root)
+pub fn get_fs_structure() -> Directory {
+    new_directory()
 }

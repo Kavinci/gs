@@ -1,11 +1,9 @@
-use std::io::{prelude::*, IoSliceMut};
-use std::collections::HashMap;
-use std::net::{SocketAddr, TcpListener, TcpStream};
-use std::fs;
-use io;
-mod threading;
+use std::io::{prelude::*};
+use std::net::{TcpListener, TcpStream};
+pub mod threading;
 mod request;
 mod transient_request;
+mod response;
 
 pub struct HTTP {
     listener: TcpListener
@@ -19,105 +17,41 @@ impl HTTP {
         }
     }
 
-    pub fn run(&mut self) {
-        let pool = threading::ThreadPool::new(16);
+    pub fn run(&mut self, handler: fn(TcpStream), pool: threading::ThreadPool) {
         for stream in self.listener.incoming() {
             let stream = stream.unwrap();
-            pool.spawn(|| { handle_connection(stream) });
+            pool.spawn(move || { handler(stream) });
         }
     }
 }
 
-fn handle_connection(mut stream: TcpStream) {
+pub fn handle_connection(mut stream: TcpStream) {
     let mut buffer = [0;1024];
     let res = stream.read(&mut buffer);
-    let response: &str;
-    let request: request::Request; 
+    let request: request::Request;
+    let transient_request: transient_request::TransientRequest; // = parse_request_transient(buffer); 
     match res {
-        Result::Err(_) => request = request::Request::new(),
-        Result::Ok(_) => request = parse_request(&mut buffer),
+        Result::Err(_) => transient_request = transient_request::TransientRequest::new(),
+        Result::Ok(_) => transient_request = parse_request_transient(&mut buffer), //parse_request(&mut buffer),
     }
-    response = "HTTP/1.1 200 OK\r\n\r\n";
+    request = parse_request(transient_request);
+    let response = handle_request(request).to_string();
     stream.write(response.as_bytes()).unwrap();
     stream.flush().unwrap();
 }
 
-fn parse_request(buffer: &mut [u8]) -> request::Request {
+fn parse_request(transient: transient_request::TransientRequest) -> request::Request {
     let mut request = request::Request::new();
-    let mut key: String = String::new();
-    let mut value: String = String::new();
-    let mut count: usize = 0;
-    let mut last: u8 = 0;
-    let mut now: u8 = 0;
-    let mut is_key: bool = true;
-    let mut pairs: usize = 0;
-    // for buf in buffer {
-    //     last = now.clone();
-    //     now = buf.clone();
-    //     print!("{} ", &buf);
-    //     if count == 0 {
-    //         if now == 32u8{
-    //             //println!("0: {}", value);
-    //             request.insert(String::from("method"), value.clone());
-    //             count = count + 1;
-    //             value = String::new();
-    //         } 
-    //         else {
-    //             value.push(now as char);
-    //         }
-    //     }
-    //     else if count == 1 {
-    //         if now == 32u8{
-    //             //println!("1: {}", value);
-    //             request.insert(String::from("identifier"), value.clone());
-    //             count = count + 1;
-    //             value = String::new();
-    //         }
-    //         else {
-    //             value.push(now as char);
-    //         }
-    //     }
-    //     else if count == 2 {
-    //         if now == 13u8 {
-    //             //println!("2: {}", &value);
-    //             request.insert(String::from("protocol"), value.clone());
-    //             count = count + 1;
-    //             value = String::new();
-    //         }
-    //         else {
-    //             value.push(now as char);
-    //         }
-    //     }
-    //     else if count == 3 {
-    //         if is_key && last == 58u8 && now == 32u8 {
-    //             is_key = false;
-    //             value.pop();
-    //         }
-    //         if now == 10u8 && last == 13u8 {
-    //             key = key.trim().to_string();
-    //             value = value.trim().to_string();
-    //             if key != "" && value != "" {
-    //                 request.insert(key.to_lowercase().clone(), value.clone());
-    //             }
-    //             is_key = true;
-    //             key = String::new();
-    //             value = String::new();
-    //         }
-    //         if now != 0u8 && now != 13u8 && now != 10u8 {
-    //             if is_key && now != 58u8 && now != 32u8 {
-    //                 key.push(now as char);
-    //             }
-    //             else {
-    //                 value.push(now as char);
-    //             }
-    //         }
-    //     }
-    // }
-    request::Request::new()
+    request.parse_request_line(transient.request_line);
+    for header in transient.headers {
+        request.parse_headers(header);
+    }
+    request.parse_body(transient.body);
+    request
 }
 
 fn parse_request_transient(buffer: &mut [u8]) -> transient_request::TransientRequest {
-    println!("{}", String::from_utf8_lossy(&buffer[..]));
+    //println!("{}", String::from_utf8_lossy(&buffer[..]));
     let mut transient = transient_request::TransientRequest::new();
     let mut count: usize = 0;
     let cr = 13u8;
@@ -136,7 +70,7 @@ fn parse_request_transient(buffer: &mut [u8]) -> transient_request::TransientReq
                 count = count + 1;
             }
             else {
-                transient.requestLine.push(*buf);
+                transient.request_line.push(now);
             }
         }
         // Headers
@@ -151,20 +85,35 @@ fn parse_request_transient(buffer: &mut [u8]) -> transient_request::TransientReq
                     header = Vec::new();
                 }
             }
-            else if now != cr {
-                crlf_count = crlf_count - 1;
+            else if now != cr && now != 0u8 {
+                //println!("{} : {}", crlf_count, now);
+                crlf_count = crlf_count + 1;
             }
-            else {
-                header.push(*buf);
+            else if  now != 0u8 {
+                crlf_count = 0;
+                header.push(now);
             }
         }
         // Message Body
         else if count == 2 {
             // ignore the buffer
             if *buf != 0u8 {
-                transient.body.push(*buf);
+                transient.body.push(now);
             }
         }
     }
     transient
+}
+
+fn handle_request(request: request::Request) -> response::Response {
+    // TODO: parse request and return response
+    // Handle headers
+    // handle routing
+    create_response()
+}
+
+fn create_response() -> response::Response {
+    let mut response = response::Response::new();
+    println!("{}", response.to_string());
+    response
 }

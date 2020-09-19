@@ -1,5 +1,5 @@
 # GS - General Store
-General Store is a Salsify like object server written in Rust using Redis. Featuring a management interface to manage files and directories, access control, custom metadata, tagging, and search for your personal files managed by the server. Many applications can benefit from General Store as a standalone app or a combined service to serve static files for your web application or other services.
+General Store is a Salsify: Digital Asset Manager like object server written in Rust using Redis. Featuring a management interface to manage files and directories, access control, custom metadata, tagging, and search for your personal files managed by the server. Many applications can benefit from General Store as a standalone app or a combined service to serve static files for your web application or other services.
 
 This service is written to serve custom themes from the themes directory. A default theme already exists if you choose not to provide your own.
 

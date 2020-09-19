@@ -1,5 +1,3 @@
-use actix_web::{HttpRequest, HttpResponse, Result, Responder, Error};
-use actix_files::NamedFile;
 use std::path::PathBuf;
 use std::env;
 
