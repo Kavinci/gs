@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::env;
 extern crate num_cpus;
 
+
 pub struct Configuration {
     pub root: PathBuf,
     pub port: String,
@@ -10,6 +11,7 @@ pub struct Configuration {
 }
 
 impl Configuration {
+    //#![feature(const_fn)]
     pub fn new() -> Configuration {
         Configuration {
             root: get_root(),
@@ -26,6 +28,7 @@ fn get_root() -> PathBuf {
     if root.0 {
         root_path = PathBuf::from(root.1);
     }
+    println!("Root Path: {}", root_path.to_string_lossy());
     root_path
 }
 
@@ -34,6 +37,7 @@ fn get_port() -> String {
     if !port.0 {
         port.1 = String::from("5000");
     }
+    println!("Port: {}", port.1);
     port.1
 }
 
@@ -43,6 +47,7 @@ fn get_threads() -> usize {
         let max = num_cpus::get() * 2;
         threads.1 = max.to_string();
     }
+    println!("Threads: {}", threads.1.parse::<usize>().unwrap());
     threads.1.parse::<usize>().unwrap()
 }
 
@@ -54,6 +59,7 @@ fn get_theme() -> PathBuf {
         theme.1 = "default".to_string();
     }
     theme_path.push(theme.1);
+    println!("Theme: {}", theme_path.to_string_lossy());
     theme_path
 }
 
