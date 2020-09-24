@@ -1,28 +1,38 @@
 use std::io::{prelude::*};
 use std::net::{TcpListener, TcpStream};
+extern crate ctrlc;
 pub mod threading;
 mod request;
 mod transient_request;
 mod response;
 
 pub struct HTTP {
-    listener: TcpListener
+    listener: TcpListener,
+    terminate: bool
 }
 
 impl HTTP {
     pub fn bind(port: String) -> HTTP {
         let address: String = format!("{}:{}", "127.0.0.1", port);
         HTTP {
-            listener: TcpListener::bind(address).unwrap()
+            listener: TcpListener::bind(address).unwrap(),
+            terminate: false
         }
     }
 
-    pub fn run(&mut self, handler: fn(TcpStream), pool: threading::ThreadPool) {
+    pub fn run(&mut self, handler: fn(TcpStream), pool: &threading::ThreadPool) {
         for stream in self.listener.incoming() {
             let stream = stream.unwrap();
-            pool.spawn(move || { handler(stream) });
+            pool.spawn( move || { handler(stream); });
+            if self.terminate {
+                break;
+            }
         }
     }
+
+    // pub fn kill(&mut self){
+    //     self.terminate = true;
+    // }
 }
 
 pub fn handle_connection(mut stream: TcpStream) {
@@ -35,6 +45,7 @@ pub fn handle_connection(mut stream: TcpStream) {
         Result::Ok(_) => transient_request = parse_request_transient(&mut buffer), //parse_request(&mut buffer),
     }
     request = parse_request(transient_request);
+    //println!("{}", request.to_string());
     let response = handle_request(request).to_string();
     stream.write(response.as_bytes()).unwrap();
     stream.flush().unwrap();
@@ -56,12 +67,11 @@ fn parse_request_transient(buffer: &mut [u8]) -> transient_request::TransientReq
     let mut count: usize = 0;
     let cr = 13u8;
     let lf = 10u8;
-    let mut last: u8 = 0;
     let mut now: u8 = 0;
     let mut crlf_count: u8 = 0;
     let mut header: Vec<u8> = Vec::new();
     for buf in buffer {
-        last = now.clone();
+        let last = now.clone();
         now = buf.clone();
         //print!("{} ", &buf);
         // Request Line

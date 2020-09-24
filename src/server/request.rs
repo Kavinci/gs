@@ -69,11 +69,11 @@ impl Request {
     pub fn parse_headers(&mut self, headers: Vec<u8>) {
         let mut key: String = String::new();
         let mut value: String = String::new();
-        let mut count: usize = 0;
-        let mut last: u8 = 0;
         let mut now: u8 = 0;
         let mut is_key: bool = true;
         for buf in headers {
+            let last = now.clone();
+            now = buf;
             if is_key && last == 58u8 && now == 32u8 {
                 is_key = false;
                 value.pop();
@@ -99,17 +99,38 @@ impl Request {
         }
     }
 
-    pub fn parse_body(&mut self, body: Vec<u8>) {}
+    pub fn parse_body(&mut self, body: Vec<u8>) {
+        let mut now: u8 = 0;
+        for buf in body {
+            let last = now.clone();
+            now = buf;
+            // if now == 10u8 && last == 13u8 { }
+            // else {
+            //     if now != 0u8 && now != 13u8 {
+                    
+            //     }
+            // }
+            print!("{}", buf as char);
+        }
+    }
 }
 
 pub type Headers = HashMap<String, String>;
 pub type Query = HashMap<String, String>;
 
-pub struct Body {}
+pub struct Body {
+    pub form: HashMap<String, String>,
+    pub file: Vec<u8>,
+    pub content: String
+}
 
 impl Body {
     pub fn new() -> Body {
-        Body {}
+        Body {
+            form: HashMap::new(),
+            file: Vec::new(),
+            content: String::from("")
+        }
     }
 }
 

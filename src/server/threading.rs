@@ -47,11 +47,11 @@ impl Worker {
             let message = receiver.lock().unwrap().recv().unwrap();
             match message {
                 Message::NewJob(job) => {
-                    //println!("Worker {} got a job; executing.", id);
+                    println!("Worker {} got a job; executing.", id);
                     job();
                 }
                 Message::Terminate => {
-                    //println!("Worker {} was told to terminate.", id);
+                    println!("Worker {} was told to terminate.", id);
                     break;
                 }
             }
@@ -66,7 +66,7 @@ impl Drop for ThreadPool {
         for _ in &self.workers {
             self.sender.send(Message::Terminate).unwrap();
         }
-        //println!("Shutting down all workers.");
+        println!("Shutting down all workers.");
         for worker in &mut self.workers {
             println!("Shutting down worker {}", worker.id);
             if let Some(thread) = worker.thread.take() {
