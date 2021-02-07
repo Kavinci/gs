@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub struct Response {
     pub protocol: String,
     pub status_code: usize,
@@ -73,7 +74,7 @@ impl StatusCode {
             }
         }
         if index < max {
-
+            //TODO: What is going on here?
         }
     }
 }

@@ -1,7 +1,6 @@
+extern crate num_cpus;
 use std::path::PathBuf;
 use std::env;
-extern crate num_cpus;
-
 
 pub struct Configuration {
     pub root: PathBuf,
