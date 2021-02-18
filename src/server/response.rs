@@ -1,37 +1,53 @@
+use chrono::Utc;
 use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Response {
     pub protocol: String,
-    pub status_code: usize,
-    pub status_message: String,
-    pub body: String
+    pub status: Status,
+    pub headers: HashMap<String, String>,
+    pub body: String,
 }
 
-static CLRF: &str = "\r\n\r\n";
+static CLRF: &str = "\r\n";
 static PROTOCOL: &str = "HTTP/1.1";
 
 impl Response {
     pub fn new() -> Response {
+        let mut header_list = HashMap::new();
+        header_list.insert("Server".to_owned(), "General Store".to_owned());
         Response {
             protocol: String::from(PROTOCOL),
-            status_code: 200,
-            status_message: String::from("OK"),
-            body: String::from("")
+            status: Status::new(),
+            headers: header_list,
+            body: String::from(""),
         }
     }
     pub fn to_string(&mut self) -> String {
-        let response: String = format!("{} {} {}{}", PROTOCOL, self.status_code, self.status_message, CLRF);
-        response
+        let headers = self.parse_headers();
+        format!(
+            "{} {} {}{}{}{}{}",
+            PROTOCOL, self.status.code, self.status.message, CLRF, headers, CLRF, self.body
+        )
+    }
+    fn parse_headers(&mut self) -> String {
+        let mut headers: String = String::default();
+        for (key, val) in self.headers.iter() {
+            headers = headers + key + ": " + val + CLRF;
+        }
+        headers = headers + "Date: " + &Utc::now().to_rfc2822() + CLRF;
+        headers
     }
 }
+#[derive(Debug)]
+pub struct Status {
+    code: usize,
+    message: String,
+    data: HashMap<usize, String>,
+}
 
-pub struct StatusCode {
-    data: HashMap<usize, String>
-} 
-
-impl StatusCode {
-    pub fn new() -> StatusCode {
+impl Status {
+    pub fn new() -> Status {
         let mut data: HashMap<usize, String> = HashMap::new();
         data.insert(100, "Continue".to_owned());
         data.insert(101, "Switching Protocols".to_owned());
@@ -50,31 +66,36 @@ impl StatusCode {
         data.insert(504, "Gateway Time-out".to_owned());
         data.insert(505, "HTTP Version not supported".to_owned());
 
-        StatusCode {
-            data
+        Status {
+            code: 200,
+            message: "OK".to_owned(),
+            data,
         }
     }
-
-    pub fn get_status(&mut self, code: &usize) -> (bool, &String) {
-        let status = self.data.get(code);
-        let failure: (bool, &String) = (false, None.unwrap());
-        match status {
-            Some(String) => (true, status.unwrap()),
-            None => failure
-        }
+    pub fn set_message(&mut self, message: String) {
+        self.message = message.clone();
+        self.code = *self.get_code(&message);
     }
-
-    pub fn get_code(&mut self, status: String) {
-        let values = self.data.values();
-        let mut index: usize = values.len() + 1;
-        let max = index.clone();
-        for (i, value) in values.enumerate() {
-            if *value == status {
-                index = i;
+    pub fn set_code(&mut self, code: usize) {
+        self.code = code.clone();
+        self.message = self.get_message(&code);
+    }
+    fn get_message(&mut self, code: &usize) -> String {
+        let mut status: String = String::default();
+        for (key, val) in self.data.iter() {
+            if key == code {
+                status = val.to_string();
             }
         }
-        if index < max {
-            //TODO: What is going on here?
+        status
+    }
+    fn get_code(&mut self, status: &String) -> &usize {
+        let mut code: &usize = &200;
+        for (key, val) in self.data.iter() {
+            if val == status {
+                code = key;
+            }
         }
+        code
     }
 }

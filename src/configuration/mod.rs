@@ -1,12 +1,12 @@
 extern crate num_cpus;
-use std::path::PathBuf;
 use std::env;
+use std::path::PathBuf;
 
 pub struct Configuration {
     pub root: PathBuf,
     pub port: String,
     pub threads: usize,
-    pub theme: PathBuf
+    pub theme: PathBuf,
 }
 
 impl Configuration {
@@ -16,7 +16,7 @@ impl Configuration {
             root: get_root(),
             port: get_port(),
             threads: get_threads(),
-            theme: get_theme()
+            theme: get_theme(),
         }
     }
 }
@@ -24,7 +24,7 @@ impl Configuration {
 fn get_root() -> PathBuf {
     let mut root_path = PathBuf::from(env::current_dir().unwrap());
     let root = get_environment_variable("GS_ROOT");
-    if root.0 {
+    if !root.0 {
         root_path = PathBuf::from(root.1);
     }
     println!("Root Path: {}", root_path.to_string_lossy());
@@ -64,8 +64,8 @@ fn get_theme() -> PathBuf {
 
 fn get_environment_variable(match_key: &str) -> (bool, String) {
     let mut found = false;
-    let mut value: String = String::default(); 
-    for (_key, _value) in env::vars(){
+    let mut value: String = String::default();
+    for (_key, _value) in env::vars() {
         //println!("{}={}", _key, _value);
         if _key == match_key {
             found = true;

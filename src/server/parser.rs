@@ -9,17 +9,16 @@ const EQUALS: u8 = '=' as u8;
 const AMP: u8 = '&' as u8;
 const COLON: u8 = ':' as u8;
 
-pub struct Parser<I: Iterator<Item=u8>> {
+pub struct Parser<I: Iterator<Item = u8>> {
     iter: std::iter::Peekable<I>,
-    request: request::Request
+    request: request::Request,
 }
 
-impl<I: Iterator<Item=u8>> Parser<I> {
-
+impl<I: Iterator<Item = u8>> Parser<I> {
     pub fn new(iter: I) -> Self {
         Parser {
             iter: iter.peekable(),
-            request: request::Request::new()
+            request: request::Request::new(),
         }
     }
 
@@ -29,7 +28,6 @@ impl<I: Iterator<Item=u8>> Parser<I> {
         self.body();
         self.request
     }
-    
     fn request_line(&mut self) {
         self.method();
         self.target();
@@ -43,12 +41,12 @@ impl<I: Iterator<Item=u8>> Parser<I> {
                 (Some(c), Some(&SPACE)) => {
                     self.request.method.push(c as char);
                     self.iter.next();
-                    break
-                },
+                    break;
+                }
                 (Some(c), _) => {
                     self.request.method.push(c as char);
-                },
-                _ => panic!("method parsing error") //TODO: handle error for parsing state
+                }
+                _ => panic!("method parsing error"), //TODO: handle error for parsing state
             }
         }
     }
@@ -60,17 +58,17 @@ impl<I: Iterator<Item=u8>> Parser<I> {
                     self.request.uri.push(c as char);
                     self.iter.next();
                     self.query_string();
-                    break
-                },
+                    break;
+                }
                 (Some(c), Some(&SPACE)) => {
                     self.request.uri.push(c as char);
                     self.iter.next();
-                    break
+                    break;
                 }
                 (Some(c), _) => {
                     self.request.uri.push(c as char);
-                },
-                _ => panic!("uri parsing error") //TODO: handle error for parsing state
+                }
+                _ => panic!("uri parsing error"), //TODO: handle error for parsing state
             }
         }
     }
@@ -80,11 +78,13 @@ impl<I: Iterator<Item=u8>> Parser<I> {
             let (key, end) = self.get_query_key();
             if end {
                 self.request.query.insert(key, String::from(""));
-                break
+                break;
             }
             let (value, end) = self.get_query_value();
             self.request.query.insert(key, value);
-            if end { break }
+            if end {
+                break;
+            }
         }
     }
 
@@ -92,20 +92,20 @@ impl<I: Iterator<Item=u8>> Parser<I> {
         let mut key: String = String::from("");
         loop {
             match (self.iter.next(), self.iter.peek()) {
-                (Some(c), Some(&SPACE))=> {
+                (Some(c), Some(&SPACE)) => {
                     key.push(c as char);
                     self.iter.next();
-                    return (key, true)
-                },
-                (Some(c), Some(&EQUALS))=> {
+                    return (key, true);
+                }
+                (Some(c), Some(&EQUALS)) => {
                     key.push(c as char);
                     self.iter.next();
-                    return (key, false)
-                },
+                    return (key, false);
+                }
                 (Some(c), _) => {
                     key.push(c as char);
-                },
-                _ => panic!("query parsing error - key") //TODO: handle error for parsing state
+                }
+                _ => panic!("query parsing error - key"), //TODO: handle error for parsing state
             }
         }
     }
@@ -114,23 +114,21 @@ impl<I: Iterator<Item=u8>> Parser<I> {
         let mut value: String = String::from("");
         loop {
             match (self.iter.next(), self.iter.peek()) {
-                (Some(c), Some(&AMP))=> {
+                (Some(c), Some(&AMP)) => {
                     value.push(c as char);
                     self.iter.next();
-                    return (value, false)
-                },
-                (Some(SPACE), _) => {
-                    return (String::from(""), true)
-                },
+                    return (value, false);
+                }
+                (Some(SPACE), _) => return (String::from(""), true),
                 (Some(c), Some(&SPACE)) => {
                     value.push(c as char);
                     self.iter.next();
-                    return (value, true)
-                },
+                    return (value, true);
+                }
                 (Some(c), _) => {
                     value.push(c as char);
-                },
-                _ => panic!("query parsing error - value") //TODO: handle error for parsing state
+                }
+                _ => panic!("query parsing error - value"), //TODO: handle error for parsing state
             }
         }
     }
@@ -138,26 +136,26 @@ impl<I: Iterator<Item=u8>> Parser<I> {
     fn version(&mut self) {
         loop {
             match (self.iter.next(), self.iter.peek()) {
-              (Some(c), Some(&CR)) => {
-                  self.request.protocol.push(c as char);
-                  self.iter.next();
-                  self.iter.next();
-                  break
-              },
-              (Some(c), _) => {
-                self.request.protocol.push(c as char);
-              },
-              (None, _) => panic!("error on version parser")
+                (Some(c), Some(&CR)) => {
+                    self.request.protocol.push(c as char);
+                    self.iter.next();
+                    self.iter.next();
+                    break;
+                }
+                (Some(c), _) => {
+                    self.request.protocol.push(c as char);
+                }
+                (None, _) => panic!("error on version parser"),
             }
         }
     }
 
-    fn headers(&mut self) {  
+    fn headers(&mut self) {
         loop {
             let (key, end) = self.get_header_key();
             if end {
                 self.request.headers.insert(key, String::from(""));
-                break
+                break;
             }
             let (value, mut end) = self.get_header_value();
             if self.iter.peek() == Some(&CR) {
@@ -166,7 +164,9 @@ impl<I: Iterator<Item=u8>> Parser<I> {
                 end = true;
             }
             self.request.headers.insert(key, value);
-            if end { break }
+            if end {
+                break;
+            }
         }
     }
 
@@ -174,16 +174,16 @@ impl<I: Iterator<Item=u8>> Parser<I> {
         let mut key: String = String::from("");
         loop {
             match (self.iter.next(), self.iter.peek()) {
-                (Some(c), Some(&COLON))=> {
+                (Some(c), Some(&COLON)) => {
                     key.push(c as char);
                     self.iter.next(); // consume colon
                     self.iter.next(); // consume space
-                    return (key, false)
-                },
+                    return (key, false);
+                }
                 (Some(c), _) => {
                     key.push(c as char);
-                },
-                _ => panic!("query parsing error - key") //TODO: handle error for parsing state
+                }
+                _ => panic!("query parsing error - key"), //TODO: handle error for parsing state
             }
         }
     }
@@ -192,21 +192,19 @@ impl<I: Iterator<Item=u8>> Parser<I> {
         let mut value: String = String::from("");
         loop {
             match (self.iter.next(), self.iter.peek()) {
-                (Some(c), Some(&CR))=> {
+                (Some(c), Some(&CR)) => {
                     value.push(c as char);
                     self.iter.next(); // consume CR
                     self.iter.next(); // consume LF
-                    return (value, false)
-                },
+                    return (value, false);
+                }
                 (Some(c), _) => {
                     value.push(c as char);
-                },
-                _ => panic!("query parsing error - value") //TODO: handle error for parsing state
+                }
+                _ => panic!("query parsing error - value"), //TODO: handle error for parsing state
             }
         }
     }
 
-    fn body(&self) {
-
-    }
+    fn body(&self) {}
 }

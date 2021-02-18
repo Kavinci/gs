@@ -1,16 +1,16 @@
 extern crate ctrlc;
-use std::io::{prelude::*};
-use std::net::{TcpListener, TcpStream};
 use crate::configuration;
-pub mod threading;
-mod request;
-mod response;
+use crate::routing;
+use std::io::prelude::*;
+use std::net::{TcpListener, TcpStream};
 mod parser;
-
+pub mod request;
+pub mod response;
+pub mod threading;
 
 pub struct HTTP {
     listener: TcpListener,
-    terminate: bool
+    terminate: bool,
 }
 
 impl HTTP {
@@ -18,14 +18,16 @@ impl HTTP {
         let address: String = format!("{}:{}", "127.0.0.1", config.port.clone());
         HTTP {
             listener: TcpListener::bind(address).unwrap(),
-            terminate: false
+            terminate: false,
         }
     }
 
     pub fn run(&mut self, handler: fn(TcpStream), pool: &threading::ThreadPool) {
         for stream in self.listener.incoming() {
             let stream = stream.unwrap();
-            pool.spawn( move || { handler(stream); });
+            pool.spawn(move || {
+                handler(stream);
+            });
             if self.terminate {
                 break;
             }
@@ -38,9 +40,9 @@ impl HTTP {
 }
 
 pub fn handle_connection(mut stream: TcpStream) {
-    let mut buffer = [0;1024]; //TODO: Dynamic buffer, possibly inspect TCP headers
+    let mut buffer = [0; 1024]; //TODO: Dynamic buffer, possibly inspect TCP headers
     let res = stream.read(&mut buffer);
-    let (request, mut response) = match res {
+    let (request, response) = match res {
         Result::Err(_) => (request::Request::new(), response::Response::new()),
         Result::Ok(_) => parse_request(&mut buffer),
     };
@@ -56,10 +58,12 @@ fn parse_request(buffer: &mut [u8]) -> (request::Request, response::Response) {
     (parser.parse(), response::Response::new())
 }
 
-fn handle_request(request: request::Request, mut response: response::Response) -> response::Response {
-    // TODO: parse request and return response
+fn handle_request(
+    mut request: request::Request,
+    mut response: response::Response,
+) -> response::Response {
+    // TODO: Handle headers
+    routing::route(&mut request, &mut response);
     print!("{:#?}\n{:#?}\n", request, response);
-    // Handle headers
-    // handle routing
     response
 }

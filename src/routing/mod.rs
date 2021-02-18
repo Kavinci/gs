@@ -1,36 +1,20 @@
-use std::path::PathBuf;
-use std::env;
-use crate::configuration;
-mod objects;
-mod references;
+use crate::server;
+use std::collections::HashMap;
+use std::fs;
+mod parser;
 
-pub struct WebPath {
-}
-
-pub async fn route(req: HttpRequest) -> Result<NamedFile> {
-    let mut path: PathBuf = req.match_info().query("filepath").parse().unwrap();
-    if !path.exists() {
-        path = get_theme_route(path);
+pub fn route(req: &mut server::request::Request, res: &mut server::response::Response) {
+    let (path, get_file) = parser::parse_uri(req.uri.clone());
+    let mut status = server::response::Status::new();
+    if get_file {
+        let file = fs::read_to_string(path);
+        let (body, headers, status_code) = match file {
+            Result::Ok(data) => (data, parser::get_metadata(), 200),
+            Result::Err(err) => (format!("{}", err), HashMap::default(), 404),
+        };
+        res.body = body;
+        res.headers.extend(headers);
+        status.set_code(status_code);
+        res.status = status;
     }
-    //println!("{}", path.display());
-    Ok(NamedFile::open(path)?)
 }
-
-fn get_theme_route(path: PathBuf) -> PathBuf {
-    let mut root_path: PathBuf = env::current_dir().unwrap();
-    root_path.push("themes");
-    root_path.push(utils::get_theme());
-    root_path.push("dist");
-    root_path = root_path.join(path.as_path());
-        if !root_path.is_file() {
-            root_path.push("index.html");
-        }
-    root_path
-}
-
-pub async fn references_route(req: HttpRequest) -> impl Responder {
-    let path: String = req.path().to_string();
-    //println!("test: {}", path);
-    references::get_fs_structure(path)
-}
-
